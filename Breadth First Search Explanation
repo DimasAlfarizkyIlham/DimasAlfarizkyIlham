@@ -1,8 +1,7 @@
-*Nama : Dimas Alfarizky Ilham*
+Nama : Dimas Alfarizky Ilham*
+Nim : 5311421023*
+Penjelasan Algoritma Breadth First Search
 
-*Nim : 5311421023*
-
-##Penjelasan Algoritma Breadth First Search
 Rincian Program:
 
 import java.util.ArrayDeque;
