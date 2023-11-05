@@ -353,9 +353,6 @@ public class GameMain extends JPanel {
 //saat class ini sudah mencapai posisi akhir, maka dengan melakukan klik kembali permainan dapat dimulai kembali
 //class ini mampu menyimpan kondisi yang sudah dilakukan pada masing-masing langkah sehingga dapat menggambbarkan topologi tree pada bagian "updateseed"
 
-//berikut merupakan kondisi saat class dicompile
-
-
 //program dari class ini masih memiliki beberapa kekurangan saat permainan dijalankan
 //pemain cross selalu memulai duluan hal ini akan membuat tidak adil dengan player lingkaran sehingga perlu menambahkan fungsi random dalam menentukan giliran
 //permainan tictactoe memiliki sebuah tric menjebak player kedua sehingga dengan board 3 x 3 akan menghasilkan hasil draw atau hanya player pertama yang akan selalu menang ketika berhasil menjebak
@@ -633,5 +630,3 @@ public class Board {
             //&& cells[3][3]0content == seed);
     //}
 //dengan menambahkan kondisi menang menjadi 4 berturut turt maka kondisi menjebak dapat dikurangi
-
-//berikut tampilan dari class yang sudah diperbaharui
