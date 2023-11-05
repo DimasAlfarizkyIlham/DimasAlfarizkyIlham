@@ -372,8 +372,8 @@ import javax.swing.*;
 @SuppressWarnings("serial")
 public class GameMain extends JPanel {
     // Named-constants for the game board
-    public static final int ROWS = 6; // ROWS by COLS cells
-    public static final int COLS = 6;
+    public static final int ROWS = 4; // ROWS by COLS cells
+    public static final int COLS = 4;
     public static final String TITLE = "Tic Tac Toe";
 
     // Name-constants for the various dimensions used for graphics drawing
@@ -442,13 +442,19 @@ public class GameMain extends JPanel {
     
     /** Initialize the game-board contents and the current-state */
     public void initGame() {
+        Random random = new Random();
+        int randomValue = random.nextInt(2); // Menghasilkan nilai acak 0 atau 1
         for (int row = 0; row < ROWS; ++row) {
             for (int col = 0; col < COLS; ++col) {
                 board.cells[row][col].content = Seed.EMPTY; // all cells empty
             }
         }
         currentState = GameState.PLAYING; // ready to play
-        currentPlayer = Seed.CROSS; // cross plays first
+        if (randomValue == 0) {
+            currentPlayer = Seed.CROSS; // Jika nilai acak adalah 0, currentPlayer adalah CROSS
+        } else {
+            currentPlayer = Seed.NOUGHT; // Jika nilai acak adalah 1, currentPlayer adalah NOUGHT
+        }
     }
 
     /** Update the currentState after the player with "theSeed" has placed on (row, col) */
@@ -509,9 +515,27 @@ public class GameMain extends JPanel {
 }
 
 //dilakukan perubahan pada bagian
-//public static final int ROWS = 6; // ROWS by COLS cells
-    //public static final int COLS = 6;
-//untuk menciptakan papan tictactoe yang berjumlah 6x 6
+//public static final int ROWS = 4; // ROWS by COLS cells
+    //public static final int COLS = 4;
+//untuk menciptakan papan tictactoe yang berjumlah 4 x 4
+
+//dan juga dilakukan pada
+public void initGame() {
+        Random random = new Random();
+        int randomValue = random.nextInt(2); // Menghasilkan nilai acak 0 atau 1
+        for (int row = 0; row < ROWS; ++row) {
+            for (int col = 0; col < COLS; ++col) {
+                board.cells[row][col].content = Seed.EMPTY; // all cells empty
+            }
+        }
+        currentState = GameState.PLAYING; // ready to play
+        if (randomValue == 0) {
+            currentPlayer = Seed.CROSS; // Jika nilai acak adalah 0, currentPlayer adalah CROSS
+        } else {
+            currentPlayer = Seed.NOUGHT; // Jika nilai acak adalah 1, currentPlayer adalah NOUGHT
+        }
+    }
+// untuk mengubah urutan permainan pertama
 
 //perubahan Board.java
 package TicTacToe;
