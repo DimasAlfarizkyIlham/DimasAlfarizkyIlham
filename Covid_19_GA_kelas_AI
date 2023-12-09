@@ -1,0 +1,224 @@
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+import random
+
+#load dataset
+data = pd.read_csv('COVID-19 di Indonesia @kawalcovid19 - Statistik Harian (3).csv')
+data = data.loc[0:49, 'Kasus harian']
+data = np.genfromtxt(data, dtype= None)
+data
+
+# initial parameter awal
+pop_size = 50 #popoulasi awal
+gene_per_pop = 3
+pc = 0.7 #probabilitas crossover/kemungkinan untuk crossover
+
+# fungsi untuk membuat bobot individu awal
+def generasi_awal(pop_size, gene_per_pop):
+    population_size = (pop_size, gene_per_pop) #membuat matrix dengan panjan pop_size dan lebar gene_per_pop
+    gene = np.random.uniform(low=0.1, high=0.9, size=population_size) #random nilai genenya
+    return gene #mengembalikan nilai bobot gene
+
+generasiAwal=generasi_awal(pop_size, gene_per_pop)
+generasiAwal
+
+# prediksi hari menggunakan metode rolling window
+def day_predict(pop_size, gene_per_pop):
+    day = []
+    for i in range(2, pop_size):
+        row = []
+        for j in range(0, gene_per_pop):
+            if j == 0:
+                row.append(data[i-1]) #y(t-1) atau untuk menggunakan nilai langkah sebelumnya
+            elif j == 1:
+                row.append(data[i-2]) #y(t-2) atau untuk menggunakan nilai 2 langkah sebelumnya
+            elif j == 2:
+                row.append(data[i]) #y(target) untuk nilai yang akan digunakan untuk prediksi
+        day.append(row) #menambahkan nilai pada variabel row
+    return day
+
+dayPredict = day_predict(pop_size, gene_per_pop)
+dayPredict
+
+#Fungsi untuk membuat hasil prediksi kasus harian berdasarkan prediksi hari yang dilakukan
+def y_pred(pop_size, gene, day_predict, gene_per_pop):
+    y_pred_indv = [] #membuat variabel hasil prediksi kasus harian per individu
+    for i in range (0,pop_size-2): #pengulangan i sebanyak dari data pertama hingga pop_size[50]-2
+        row = [] #membuat variabel baris
+        for j in gene: #pengulangan j sebanyak gene [150]
+            total = 0
+            z = 0
+            for k in j: #pengulangan k sebanyak j=gene[150]
+                if k<gene_per_pop-1: #jika setiap pengulangan k sebanyak j kurang dari gene per populasi[3] dikurangi 1 = 2
+                    g = k*day_predict[i][z] #pengulangan k dikali dengan hasil daypredict baris pengulangan i dan colom z
+                else:
+                    g = k #nilai g akan sama dengan k
+                z=z+1 #perpindahan ke indeks selanjutnya
+                total = total + g
+            row.append(total)
+        y_pred_indv.append(row)
+    return y_pred_indv #generate y_pred_individu
+
+yPred = y_pred(pop_size, generasiAwal, dayPredict, gene_per_pop)
+yPred
+
+#fitnessfunction
+def fitness_func(pop_size, day_predict, hasil_prediksi, gene_per_pop):
+    mape = [] #MAPE (Mean Absolute Percentage Error)
+    fitn = [] #nilai fitnessnya, digunakan untuk menyimpan hasil fitness value
+    for i in range(0,pop_size):
+        row = [] #membuat baris
+        for j in range(0,len(data_y)): #perulangan sebanyak panjangnya daypredict
+            if hasil_prediksi[j][i]>0:
+                row.append(abs((hasil_prediksi[j][i]-data_y[j])/hasil_prediksi[j][i])) #jika hasil prediksi dengan baris sebanyak j dan kolom sebanyak i lebih dari 0 maka akan ditanpakhkan nilai pada rumus
+            else:
+                row.append(abs(0)) #mape akan bernilai 0 ketika hasil_prediksi bernilai 0
+        mape.append(row) #menambahkan nilai kepada baris
+    for i in range(0,len(mape)):
+        f = 0 #inisialisasi f=0
+        for j in range (0,pop_size-2):
+            f = f + mape[i][j]
+        f=f/len(mape)
+        fitn.append(1/(f+0.01))
+    return fitn
+
+#Evaluasi fitness function
+dayPredict = np.array(dayPredict)
+data_y = dayPredict[:, (gene_per_pop-1)]
+fitness = fitness_func(pop_size, day_predict, yPred, gene_per_pop)
+fitness
+
+#plot fitness
+plt.plot(fitness)
+plt.title('Grafik Nilai Fitness')
+plt.xlabel('Individu')
+plt.ylabel('Fitness')
+plt.show()
+
+#fungsi kemungkinan tiap fitness
+def probability(fitness):
+    prob = []
+    sumF = 0
+    for i in range(0,len(fitness)):
+        sumF = sumF + fitness[i]
+    for i in range(0,len(fitness)):
+        prob.append(fitness[i]/sumF*100)
+    return prob #generate probabilitas setiap fitness individu
+
+yProb = probability(fitness)
+yProb
+
+#fungsi menentukan rentang probabilitas crossover
+def rangePc(probs):
+    ranges = []
+    x = 0
+    y = 0
+    minArray = []
+    maxArray = []
+    for i in range(0,len(probs)):
+        if i == 0:
+            x = 0;
+        else:
+            x = x + probs[i-1]
+        y = y + probs[i]
+        minArray.append(x)
+        maxArray.append(y)
+    ranges = np.vstack((minArray, maxArray)).T
+    return ranges #generate nilai min dan max pada setiap probabilitas indifidu
+
+yRanges = rangePc(yProb)
+yRanges
+
+#fungsi roda acak
+def round_wheel(pc,fitness,ranges):
+    rW = []
+    for i in range(0,int(pc*50)):
+        rNum = random.uniform(0,100)
+        for j in range(0,len(ranges)):
+            if rNum >= ranges[j][0] and rNum <= ranges[j][1]:
+                rW.append(j)
+    return rW #terpilih individu ke-sekian
+
+roundWheel = round_wheel(pc,fitness,yRanges)
+roundWheel
+
+#fungsi crossover, metode yang digunakan adalah Single-Point Crossover
+def cross_over(pc,rw,gA): #GA=generasi awal
+    co = []
+    x = 0
+    y = 0
+    for i in range(0,len(rw)):
+        row = []
+        for j in range(0,gene_per_pop):
+            row.append(gA[rw[i]][j])
+        co.append(row) #mendapatkan nilai gen dari hasil roundwheel
+
+    for i in range(0,len(rw),2):
+        if i % 2 == 0 and i == len(rw)-1:
+            co[i][1], co[0][1] = (co[0][1]*(1-pc))+(co[i][1]*pc), (co[i][1]*(1-pc))+(co[0][1]*pc) #swap pasangan akhir ke pasangan awal ketika jumlah datanya ganjil
+        else:
+            co[i][1], co[i+1][1] = (co[i+1][1]*(1-pc))+(co[i][1]*pc), (co[i][1]*(1-pc))+(co[i+1][1]*pc)
+    return co #menghasilkan nilai offspring berdasarkan hasil crossover
+
+offSpring = cross_over(pc,roundWheel,generasiAwal)
+offSpring
+
+#mengecek panjang data
+yPredOffspring = y_pred(pop_size, offSpring, dayPredict, gene_per_pop)
+len(yPredOffspring)
+
+#pengujian fitness ulang
+fitnessOffspring = fitness_func(len(yPredOffspring[0]), day_predict, yPredOffspring, gene_per_pop)
+fitnessOffspring
+
+#plot fitness
+plt.plot(fitnessOffspring)
+plt.title('Grafik Nilai Fitness')
+plt.xlabel('Individu')
+plt.ylabel('Fitness')
+plt.show()
+
+#mengevaluasi generasi
+def evalGen(generasiAwal,gene_per_pop,fitness,offSpring,fitnessOffspring):
+    evalIndv = []
+    indvAwal = []
+    indvOffspring = []
+    for i in range(0,len(generasiAwal)):
+        row = []
+        for j in range(0,gene_per_pop+1):
+            if j == gene_per_pop:
+                row.append(fitness[i])
+            else:
+                row.append(generasiAwal[i][j])
+        indvAwal.append(row) #membuat matrix berisi 3gen individu dan fitness dari generasi awal
+    for i in range(0,len(offSpring)):
+        row = []
+        for j in range(0,gene_per_pop+1):
+            if j == gene_per_pop:
+                row.append(fitnessOffspring[i])
+            else:
+                row.append(offSpring[i][j])
+        indvOffspring.append(row) #membuat matrix berisi 3gen individu dan fitness dari offspring
+    evalIndv = indvAwal + indvOffspring #menggabungkan 2 matrix untuk dapat di sorting berdasarkan fitness
+    return sorted(evalIndv, key=lambda x: x[3], reverse=True) #sorting descending berdasarkan nilai fitness
+
+evalIndividu = evalGen(generasiAwal,gene_per_pop,fitness,offSpring,fitnessOffspring)
+evalIndividu
+
+#evaluasi fitness
+def eval_elitism(evalIndividu,pop_size):
+    for i in range(0,len(evalIndividu)-pop_size):
+        evalIndividu.pop() #mengeliminasi individu yang memiliki fitness terendah
+    return evalIndividu
+
+evalElitism = eval_elitism(evalIndividu,pop_size)
+evalElitism
+
+#estimasi menggunakan prediksi data dari luar, hari 51 dan 52 covid 19
+evalElitism[0][0]
+hari51 = round((evalElitism[0][0]*data[49])+(evalElitism[0][1]*data[48])+evalElitism[0][2])
+hari52 = round((evalElitism[1][0]*hari51)+(evalElitism[1][1]*data[49])+evalElitism[1][2])
+print("prediksi hari ke 51 ", hari51)
+print("prediksi hari ke 52 ", hari52)
