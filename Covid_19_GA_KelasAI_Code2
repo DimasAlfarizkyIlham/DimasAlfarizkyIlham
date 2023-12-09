@@ -1,0 +1,82 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Fitness menggunakan MAE (Mean Absolute Error) mengukur seberapa bagus prediksi individu dibandingkan dengan data aktual
+#Individu dengan MAE terkecil dianggap lebih "fit" dan memiliki peluang lebih besar untuk bereproduksi.
+def calculate_mae(data_set, prediksi):
+    mae = 0
+    for i in range(len(data_set)):
+        mae += abs(data_set[i] - prediksi[i])
+    return mae / len(data_set)
+
+# Crossover one point untuk memilih titik acak dalam kromosom dan menukar bagian kromosom di antara kedua individu.
+def crossover_one_point(parent1, parent2):
+    crossover_point = np.random.randint(1, len(parent1) - 1)
+    child1 = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
+    child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
+    return child1, child2
+
+#random swap mutation untuk memilih dua gen acak dalam kromosom dan menukar mereka.
+def mutation_random_swap(individual):
+    mutation_point1, mutation_point2 = np.random.choice(len(individual), 2, replace=False)
+    individual[mutation_point1], individual[mutation_point2] = individual[mutation_point2], individual[mutation_point1]
+    return individual
+
+def generate_individual(data_set):
+    return np.random.randint(0, 100, len(data_set))
+
+def add_random_individuals(population, n_new_individuals):
+    for _ in range(n_new_individuals):
+        population.append(generate_individual(data_set))
+    return population
+
+#Elitism selection untuk memastikan bahwa individu terbaik dalam populasi saat ini selalu dibawa ke generasi berikutnya.
+def elitism(population):
+    best_individual = population[0]
+    for individual in population:
+        if calculate_mae(data_set, individual) < calculate_mae(data_set, best_individual):
+            best_individual = individual
+    population[0] = best_individual
+    return population
+
+def genetic_algorithm(data_set, n_generations, crossover_prob=0.8, mutation_prob=0.2, n_new_individuals=10):
+    population = []
+    for i in range(100):
+        population.append(generate_individual(data_set))
+
+    for _ in range(n_generations):
+        population = selection(population)
+
+        for i in range(0, len(population), 2):
+            if np.random.rand() < crossover_prob:
+                child1, child2 = crossover_one_point(population[i], population[i + 1])
+                population.append(child1)
+                population.append(child2)
+
+        for i in range(len(population)):
+            if np.random.rand() < mutation_prob:
+                population[i] = mutation_random_swap(population[i])
+
+        population = elitism(population)
+
+        population = add_random_individuals(population, n_new_individuals)
+
+    return population[0]
+
+# Data set (20 data points)
+data_set = np.random.randint(0, 100, 20)
+data_set = np.concatenate((data_set, np.random.randint(0, 100, 20)))
+
+best_individual = genetic_algorithm(data_set, 100)
+
+prediksi = best_individual[10:]
+
+mape = calculate_mae(data_set[10:], prediksi)
+print("MAPE:", mape)
+
+plt.plot(data_set[10:], label="Data Aktual")
+plt.plot(prediksi, label="Prediksi")
+plt.xlabel("Waktu")
+plt.ylabel("Nilai kasus covid")
+plt.legend()
+plt.show()
